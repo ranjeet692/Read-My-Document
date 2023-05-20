@@ -1,0 +1,6 @@
+**/__pycache__
+**/*secret*.*
+data/**
+/venv
+.venv/
+.ipynb_checkpoints/
