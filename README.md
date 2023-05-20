@@ -1,6 +1,6 @@
 # Read My Documents
 
-An LLM Application to ask questions about your upload documents.
+An LLM Application to ask questions about your uploaded documents.
 
 ## Initial Setup
 
@@ -32,6 +32,8 @@ export OPENAI_API_KEY="your key"
 streamlit run main.py
 ```
 Access the app: http://localhost:8501
+
+![](assets/read-my-document.png)
 
 ## Roadmap
 
