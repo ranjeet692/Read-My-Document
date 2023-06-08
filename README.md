@@ -33,8 +33,14 @@ streamlit run main.py
 ```
 Access the app: http://localhost:8501
 
-![](assets/read-my-document.png)
+![App UI](assets/read-my-document.png)
 
 ## Roadmap
 
 * Add support for text, doc, pdf and images
+
+## Project Architecture
+
+![Project Architecture](assets/langchain.png)
+
+## What is Langchain
