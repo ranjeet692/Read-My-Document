@@ -43,4 +43,7 @@ Access the app: http://localhost:8501
 
 ![Project Architecture](assets/langchain.png)
 
-## What is Langchain
+## Llama Embeding Model
+
+
+[Download Here ](https://huggingface.co/Pi3141/alpaca-7B-ggml/resolve/main/ggml-model-q4_0.bin)
