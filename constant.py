@@ -4,8 +4,8 @@ from chromadb.config import Settings
 MODEL_DIRECTORY = "./models"
 
 # model names
-GPT4ALL = "gpt4all"
-LLAMA_CPP = "llama_cpp/llama_cpp.bin"
+GPT4ALL = "gpt4all/ggml-gpt4all-j-v1.3-groovy.bin"
+LLAMA_CPP = "llama_cpp/ggml-model-q4_0.bin"
 
 # Define the folder for storing database
 PERSIST_DIRECTORY = "./db"

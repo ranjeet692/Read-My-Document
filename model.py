@@ -25,24 +25,18 @@ def store_csv(df):
     loader = DataFrameLoader(df, page_content_column="batter")
     document_data = loader.load()
     print(document_data)
-
-    #embed data to store into vectior store
-    text_splitter = CharacterTextSplitter(chub_size=1000, overlap_size=0)
-    chunks = text_splitter.split(document_data)
-
     #embedding using LlamaCppEmbeddings
-    llama_embeddings = LlamaCppEmbeddings(model_path= f"{MODEL_DIRECTORY}/{LLAMA_CPP}")
+    llama = LlamaCppEmbeddings(model_path= f"{MODEL_DIRECTORY}/{LLAMA_CPP}")
 
     #store into vector store
     vector_store = Chroma.from_documents(
-        chunks, 
-        embeddings = llama_embeddings, 
+        documents=document_data, 
+        embeddings = llama, 
         collection_name=COLLECTION_NAME, 
         client_settings=CHROMA_SETTINGS
     )
 
-    llama_llm = LlamaCpp(model_path= f"{MODEL_DIRECTORY}/{LLAMA_CPP}")
-    qa = ConversationalRetrievalChain.from_llm(llama_llm, vector_store.as_retriever(), memory=memory)
+    qa = ConversationalRetrievalChain.from_llm(llama, vector_store.as_retriever(), memory=memory)
     vector_store.persist()
     vector_store = None
     return qa
