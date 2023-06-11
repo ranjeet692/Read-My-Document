@@ -43,7 +43,7 @@ Access the app: http://localhost:8501
 
 ![Project Architecture](assets/langchain.png)
 
-## Llama Embeding Model
+## Local Models
 
-
-[Download Here ](https://huggingface.co/Pi3141/alpaca-7B-ggml/resolve/main/ggml-model-q4_0.bin)
+* Llama - [Download Here](https://huggingface.co/Pi3141/alpaca-7B-ggml/resolve/main/ggml-model-q4_0.bin)
+* GPT4All - [Download Here](https://gpt4all.io/models/ggml-gpt4all-j-v1.3-groovy.bin)
