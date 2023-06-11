@@ -34,16 +34,14 @@ if file is not None:
     query = st.text_area("Write your query here")
     submit = st.button("Submit")
     if submit:
-        docs = vectore_store.similarity_search(query)
-        print(docs[0].page_content)
-        response = get_result(file, query, model, key)
+        qa = vectore_store.similarity_search(query)
+        response = get_result(qa, query)
         st.markdown((response), unsafe_allow_html=True)
         
         st.session_state.past.append(query)
         st.session_state.generated.append(response)
 
 if st.session_state["generated"]:
-
     for i in range(len(st.session_state["generated"]) - 1, -1, -1):
         message(st.session_state["generated"][i], key=str(i))
         message(st.session_state["past"][i], is_user=True, key=str(i) + "_user")

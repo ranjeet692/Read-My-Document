@@ -16,3 +16,5 @@ CHROMA_SETTINGS = Settings(
     persist_directory=PERSIST_DIRECTORY,
     anonymized_telemetry=False
 )
+
+COLLECTION_NAME = "ipl_2023"
