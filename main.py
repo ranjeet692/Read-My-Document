@@ -1,12 +1,12 @@
 import streamlit as st
 from streamlit_chat import message
 import pandas as pd
-
-from model import get_result, store_csv
+import os
+from model import get_result, store_csv, load_qa
 
 # page title and icon
 st.set_page_config(page_title="IPL 2023", page_icon=":robot:")
-st.header("IPL 2023")
+st.header("QA with Personal Documents")
 
 # session
 if "generated" not in st.session_state:
@@ -15,26 +15,72 @@ if "generated" not in st.session_state:
 if "past" not in st.session_state:
     st.session_state["past"] = []
 
+# clear submit
+def clear_submit():
+    st.session_state["submit"] = False
+
+def setOpenApiKey(key):
+    st.session_state["OPENAI_API_KEY"] = key
+    os.environ["OPENAI_API_KEY"] = key
+    print("key set to ", key)
+
+st.session_state["OPENAI_API_KEY"] = os.environ["OPENAI_API_KEY"]
+
+key = None
 # sidebar
 with st.sidebar:
-    st.title("LangChain with OpenAI/GPT4All")
-    model = st.radio("Select Model", ("GPT4ALL(Local LLM)", "Open AI - "))
+    st.title("LangChain with OpenAI/LlamaCpp")
+    model = st.radio("Select Model", ("Local LLM", "Open AI"), index=1)
     if model.startswith("Open AI"):
-        key = st.text_input("Enter API Key")
+        key = st.text_input(
+            "Enter Open API Key", 
+            type="password",
+            placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxx",
+            help="Get your api key from https://platform.openai.com/account/api-keys.",  # noqa: E501
+            value=st.session_state.get("OPENAI_API_KEY", "")
+        )
 
+    if key is not None:
+        setOpenApiKey(key)
+    
     st.markdown("## Resources")
     st.markdown("[Github]()")
 
-file = st.file_uploader("Upload a csv file", type=["csv"])
-if file is not None:
-    dataframe = pd.read_csv(file)
-    vectore_store = store_csv(dataframe)
+
+file = st.file_uploader(
+    "Upload a csv file", 
+    type=["csv"],
+    on_change=clear_submit,
+    help="Upload a csv file with column name as 'batter' and 'bowler'."
+)
+
+qa = None
+print(model)
+qa = load_qa(model)
 
 if file is not None:
+    dataframe = pd.read_csv(file)
+    if model.startswith("Open AI") and st.session_state["OPENAI_API_KEY"] is None:
+        st.error("Please enter API key and restart the app")
+        st.stop()
+
+    try:
+        with st.spinner("Embedding document..."):
+            qa = store_csv(dataframe, model)
+        
+        if qa == "Error in loading model":
+            st.write("Error in loading model")
+            st.stop()
+        else:
+            st.session_state["api_key_configured"] = True
+    except Exception as e:
+        st.error(e)
+        st.stop()
+    
+if qa is not None:
     query = st.text_area("Write your query here")
     submit = st.button("Submit")
     if submit:
-        qa = vectore_store.similarity_search(query)
         response = get_result(qa, query)
         st.markdown((response), unsafe_allow_html=True)
         

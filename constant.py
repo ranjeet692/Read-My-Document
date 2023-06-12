@@ -13,8 +13,7 @@ PERSIST_DIRECTORY = "./db"
 # Define ChromaDB configuration
 CHROMA_SETTINGS = Settings(
     chroma_db_impl='duckdb+parquet',
-    persist_directory=PERSIST_DIRECTORY,
     anonymized_telemetry=False
 )
 
-COLLECTION_NAME = "ipl_2023"
+COLLECTION_NAME = "personal_doc_store"

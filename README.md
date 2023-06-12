@@ -27,10 +27,21 @@ export OPENAI_API_KEY="your key"
 ```
 [Open AI API](https://platform.openai.com/account/api-keys)
 
-6. Run 
+6. Running App 
 ```
 streamlit run main.py
 ```
+
+## With Docker
+
+```
+docker build -t MyDocumentQA .
+```
+
+```
+docker run -p 8501:8501 MyDocumentQA
+```
+
 Access the app: http://localhost:8501
 
 ![App UI](assets/read-my-document.png)
