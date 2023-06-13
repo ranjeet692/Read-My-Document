@@ -2,10 +2,12 @@ import streamlit as st
 from streamlit_chat import message
 import pandas as pd
 import os
-from model import get_result, store_csv, load_qa
+from model import get_result, store_csv, load_qa, store_document
+from openai.error import AuthenticationError
+from constant import SUPPORTED_FILE_LIST
 
 # page title and icon
-st.set_page_config(page_title="IPL 2023", page_icon=":robot:")
+st.set_page_config(page_title="My Docs QA", page_icon=":robot:")
 st.header("QA with Personal Documents")
 
 # session
@@ -24,7 +26,8 @@ def setOpenApiKey(key):
     os.environ["OPENAI_API_KEY"] = key
     print("key set to ", key)
 
-st.session_state["OPENAI_API_KEY"] = os.environ["OPENAI_API_KEY"]
+if "OPENAI_API_KEY" in os.environ:
+    st.session_state["OPENAI_API_KEY"] = os.environ["OPENAI_API_KEY"]
 
 key = None
 # sidebar
@@ -46,27 +49,32 @@ with st.sidebar:
     st.markdown("## Resources")
     st.markdown("[Github]()")
 
+qa = None
+print("model = ", model)
+print("key = ", st.session_state)
+if model.startswith("Open AI") and (st.session_state["OPENAI_API_KEY"] is None or st.session_state["OPENAI_API_KEY"] == ""):
+    raise AuthenticationError("Please enter API key and restart the app")
+else:
+    with st.spinner("Loading documents..."):
+        qa = load_qa(model)
 
 file = st.file_uploader(
     "Upload a csv file", 
-    type=["csv"],
+    type=SUPPORTED_FILE_LIST,
     on_change=clear_submit,
     help="Upload a csv file with column name as 'batter' and 'bowler'."
 )
 
-qa = None
-print(model)
-qa = load_qa(model)
-
 if file is not None:
-    dataframe = pd.read_csv(file)
+    #dataframe = pd.read_csv(file)
     if model.startswith("Open AI") and st.session_state["OPENAI_API_KEY"] is None:
         st.error("Please enter API key and restart the app")
         st.stop()
 
     try:
         with st.spinner("Embedding document..."):
-            qa = store_csv(dataframe, model)
+            #qa = store_csv(dataframe, model)
+            qa = store_document(file, model)
         
         if qa == "Error in loading model":
             st.write("Error in loading model")

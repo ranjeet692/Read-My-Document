@@ -17,3 +17,6 @@ CHROMA_SETTINGS = Settings(
 )
 
 COLLECTION_NAME = "personal_doc_store"
+
+# Supported File List
+SUPPORTED_FILE_LIST = ["csv", "pdf", "docx", "txt"]

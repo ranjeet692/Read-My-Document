@@ -7,3 +7,6 @@ azure-core
 chromadb
 llama-cpp-python
 tiktoken
+sentence_transformers
+PyPDF2
+docx2txt
