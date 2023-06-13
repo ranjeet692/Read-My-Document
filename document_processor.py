@@ -1,8 +1,9 @@
-from PyPDF2 import PDFReader, PdfFileReader
+from pypdf import PdfReader
 from io import BytesIO
 from typing import List
 import docx2txt
-from langchain.docstore.document import Document
+from langchain.schema import Document
+from langchain.document_loaders import UnstructuredFileLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings, HuggingFaceEmbeddings
 from langchain.vectorstores import Chroma, VectorStore
@@ -10,15 +11,14 @@ from openai.error import AuthenticationError, OpenAIError
 from constant import COLLECTION_NAME, PERSIST_DIRECTORY
 
 # Parse a pdf file and extract the text from it
-def parse_pdf(file: BytesIO) -> str:
-    pdfFileObj = open(file, 'rb')
-    pdfReader = PdfFileReader(pdfFileObj)
-    text = ""
-    for i in range(pdfReader.numPages):
-        pageObj = pdfReader.getPage(i)
-        text += pageObj.extractText()
-    pdfFileObj.close()
-    return text
+def parse_pdf(file: BytesIO) -> List[str]:
+    pdf = PdfReader(file)
+    pages = []
+    print(pdf.pages)
+    for page in pdf.pages:
+        text = page.extract_text()
+        pages.append(text)
+    return pages
 
 # Parse a docx file and extract the text from it
 def parse_docx(file: BytesIO) -> str:
@@ -30,40 +30,43 @@ def parse_csv(file: BytesIO) -> str:
     return file.read().decode("utf-8")
 
 # Parse a txt file and extract the text from it
-def parse_txt(file: BytesIO) -> str:
+def parse_txt(file: BytesIO) -> List[Document]:
+    """Parse a txt file and extract the text from it"""
+    #loader = UnstructuredFileLoader(file)
+    #return loader.load()
     return file.read().decode("utf-8")
 
 # convert text to document
-def text_to_document(text: str) -> List(Document):
-    doc = Document(page_content = text)
-    
-    #add more metadata here
-    doc.metadata["page"] = 1
+def text_to_document(text: str | List[str]) -> List[Document]:
+    """Converts text or list of text into document chunks"""
+    if isinstance(text, str):
+        text = [text]
 
-    #split document
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000, 
-        separators=["\n", "\r\n", "\r"], 
-        chunk_overlap=0
-    )
-
-    chunks = text_splitter.split(doc.page_content)
     doc_chunks = []
-    for i, chunk in enumerate(chunks):
-        document = Document(
-            page_content = chunk,
-            metadata = {
-                "page": doc.metadata["page"], 
-                "chunk": i,
-                "source": f"{doc.metadata['page']}-{i}"
-            }
+    #split document into chunks
+    for i, doc in enumerate(text):
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000, 
+            separators=["\n", "\r\n", "\r"], 
+            chunk_overlap=0
         )
-        doc_chunks.append(document)
-    
+
+        chunks = text_splitter.split_text(doc)
+        
+        for j, chunk in enumerate(chunks):
+            document = Document(
+                page_content = chunk,
+                metadata = {
+                    "page": i, 
+                    "chunk": i,
+                    "source": f"{i}-{j}"
+                }
+            )
+            doc_chunks.append(document)
     return doc_chunks
 
 #Embed document chucks using OpenAI API
-def embed_document_chunks_openai(doc_chunks: List(Document)) -> VectorStore:
+def embed_document_chunks_openai(doc_chunks: List[Document]) -> VectorStore:
     """Embed document chunks using OpenAI API and return ChromaDB index"""
     try:
         embedding_llm = OpenAIEmbeddings()
@@ -82,7 +85,7 @@ def embed_document_chunks_openai(doc_chunks: List(Document)) -> VectorStore:
 
 
 #Embed document chunk with local model
-def embed_document_chunks_local(doc_chunks: List(Document)) -> VectorStore:
+def embed_document_chunks_local(doc_chunks: List[Document]) -> VectorStore:
     """Embed document chunks using local model and return ChromaDB index"""
     embedding = HuggingFaceEmbeddings()
     vector_store = Chroma.from_documents(
@@ -94,21 +97,21 @@ def embed_document_chunks_local(doc_chunks: List(Document)) -> VectorStore:
     return vector_store
 
 # Parse a file and extract the text from it
-def parse_file(file: BytesIO, file_type: str) -> str:
-    if file_type == "pdf":
+def parse_file(file: BytesIO, file_type: str) -> str | List[str]:
+    if file.name.endswith(".pdf"):
         return parse_pdf(file)
-    elif file_type == "docx":
+    elif file.name.endswith(".docx"):
         return parse_docx(file)
-    elif file_type == "csv":
+    elif file.name.endswith(".csv"):
         return parse_csv(file)
-    elif file_type == "txt":
+    elif file.name.endswith(".csv"):
         return parse_txt(file)
     else:
         raise Exception("File type not supported")  # noqa: E501
 
 # Embed document chunks using model selected by user    
-def embed_and_store_text(text: str, model: str) -> VectorStore:
-    """Processes text into document chunks, embeds them, and returns a vector store"""
+def embed_and_store_text(text: str | List[str], model: str) -> VectorStore:
+    """Processes text or list of text into document chunks, embeds them, and returns a vector store"""
     doc_chunks = text_to_document(text)
 
     #embed document chunks

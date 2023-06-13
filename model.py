@@ -4,7 +4,8 @@ from langchain.embeddings import LlamaCppEmbeddings, OpenAIEmbeddings, HuggingFa
 from langchain.llms import LlamaCpp, OpenAI, GPT4All
 from langchain.vectorstores import Chroma
 from langchain.document_loaders import DataFrameLoader
-from langchain.chains import VectorDBQA
+from langchain.chains import RetrievalQA
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.memory import ConversationBufferMemory
 from constant import MODEL_DIRECTORY, COLLECTION_NAME, PERSIST_DIRECTORY, GPT4ALL
 from document_processor import parse_file, embed_and_store_text
@@ -30,7 +31,10 @@ def get_qa_llm(model):
     else:
         #qa using LlamaCppEmbeddings
         #qa_llm = LlamaCpp(model_path= f"{MODEL_DIRECTORY}/{LLAMA_CPP}")
-        qa_llm = GPT4All(model_path= f"{MODEL_DIRECTORY}/{GPT4ALL}")
+        callbacks = [StreamingStdOutCallbackHandler()]
+        path = os.path.join(MODEL_DIRECTORY, GPT4ALL)
+        qa_llm = GPT4ALL(model="models/gpt4all/ggml-gpt4all-j-v1.3-groovy.bin", callbacks=callbacks, verbose=True)
+        #qa_llm = GPT4All("ggml-gpt4all-j-v1.3-groovy")
     return qa_llm
 
 #llm chain to get the result against the query
@@ -42,22 +46,16 @@ def get_result(qa, query: str) -> str:
     return response["result"]
 
 # store the given file into vector store
-def store_document(file: BytesIO, model: str) -> VectorDBQA:
+def store_document(file: BytesIO, model: str) -> str:
     """Converts file into text, store into vector store and returns a vector qa chain"""
     #get the text from file
-    text = parse_file(file, file_type="txt")
-   
+    docs = parse_file(file, file.type)
+    
+    print("File parsed")
     #store into vector store
-    vector_store = embed_and_store_text(text, model)
+    vector_store = embed_and_store_text(docs, model)
     print("Vector store created")
-
-    #get the qa model
-    qa_llm = get_qa_llm(model)
-
-    #get the qa chain
-    qa = VectorDBQA.from_llm(llm=qa_llm, chain_type="stuff", vectorstore=vector_store)
-
-    return qa
+    return "File stored"
 
 #store the csv file into vector store
 def store_csv(df, model):
@@ -82,13 +80,12 @@ def store_csv(df, model):
 
     #load the model
     qa_llm = get_qa_llm(model)
-    qa = VectorDBQA.from_llm(llm=qa_llm, chain_type="stuff", vectorstore=vector_store)
+    qa = RetrievalQA.from_llm(llm=qa_llm, chain_type="stuff", vectorstore=vector_store)
     return qa
 
-def load_qa(model):
+def load_qa(model)-> RetrievalQA:
     #load the model
     embedding_llm = get_embedding(model)
-    qa_llm = get_qa_llm(model)
     vector_store = Chroma(
                         persist_directory=PERSIST_DIRECTORY, 
                         embedding_function=embedding_llm, 
@@ -98,5 +95,13 @@ def load_qa(model):
         return None
     else:
         print("Vector store found, returning chain")
-        qa = VectorDBQA.from_llm(llm=qa_llm, vectorstore=vector_store)
+        qa_llm = get_qa_llm(model)
+        qa = RetrievalQA.from_chain_type(
+            llm=qa_llm, 
+            chain_type="stuff", 
+            retriever=vector_store.as_retriever(), 
+            memory=memory, 
+            verbose=True
+        )
+        #qa = ConversationalRetrievalChain.from_llm(open_llm, vector_store.as_retriever(), memory=memory)
         return qa

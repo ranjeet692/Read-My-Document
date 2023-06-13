@@ -10,3 +10,8 @@ tiktoken
 sentence_transformers
 PyPDF2
 docx2txt
+pyllamacpp
+unstructured
+pdf2image
+gpt4all
+pypdf

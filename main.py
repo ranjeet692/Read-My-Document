@@ -57,16 +57,16 @@ if model.startswith("Open AI") and (st.session_state["OPENAI_API_KEY"] is None o
 else:
     with st.spinner("Loading documents..."):
         qa = load_qa(model)
+    if (qa is None):
+        st.write("No documents found. Please upload a document.")
 
 file = st.file_uploader(
-    "Upload a csv file", 
+    "Upload a supported document", 
     type=SUPPORTED_FILE_LIST,
-    on_change=clear_submit,
-    help="Upload a csv file with column name as 'batter' and 'bowler'."
+    on_change=clear_submit
 )
 
 if file is not None:
-    #dataframe = pd.read_csv(file)
     if model.startswith("Open AI") and st.session_state["OPENAI_API_KEY"] is None:
         st.error("Please enter API key and restart the app")
         st.stop()
@@ -74,7 +74,8 @@ if file is not None:
     try:
         with st.spinner("Embedding document..."):
             #qa = store_csv(dataframe, model)
-            qa = store_document(file, model)
+            store_document(file, model)
+            qa = load_qa(model)
         
         if qa == "Error in loading model":
             st.write("Error in loading model")
