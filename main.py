@@ -2,7 +2,7 @@ import streamlit as st
 from streamlit_chat import message
 import pandas as pd
 import os
-from model import get_result, store_csv, load_qa, store_document
+from model import get_result, load_qa, store_document
 from openai.error import AuthenticationError
 from constant import SUPPORTED_FILE_LIST
 
@@ -51,7 +51,7 @@ with st.sidebar:
 
 qa = None
 print("model = ", model)
-print("key = ", st.session_state)
+
 if model.startswith("Open AI") and (st.session_state["OPENAI_API_KEY"] is None or st.session_state["OPENAI_API_KEY"] == ""):
     raise AuthenticationError("Please enter API key and restart the app")
 else:
@@ -75,12 +75,6 @@ if file is not None:
         with st.spinner("Embedding document..."):
             #qa = store_csv(dataframe, model)
             store_document(file, model)
-            qa = load_qa(model)
-        
-        if qa == "Error in loading model":
-            st.write("Error in loading model")
-            st.stop()
-        else:
             st.session_state["api_key_configured"] = True
     except Exception as e:
         st.error(e)

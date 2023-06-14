@@ -1,17 +1,18 @@
 import os
 from io import BytesIO
-from langchain.embeddings import LlamaCppEmbeddings, OpenAIEmbeddings, HuggingFaceEmbeddings
-from langchain.llms import LlamaCpp, OpenAI, GPT4All
+from langchain.embeddings import OpenAIEmbeddings, HuggingFaceEmbeddings
+from langchain.llms import OpenAI, GPT4All
 from langchain.vectorstores import Chroma
 from langchain.document_loaders import DataFrameLoader
 from langchain.chains import RetrievalQA
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.memory import ConversationBufferMemory
-from constant import MODEL_DIRECTORY, COLLECTION_NAME, PERSIST_DIRECTORY, GPT4ALL
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from constant import MODEL_DIRECTORY, COLLECTION_NAME, PERSIST_DIRECTORY, GPT4ALLMODEL
 from document_processor import parse_file, embed_and_store_text
 
 #chat history
 memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+callbacks = [StreamingStdOutCallbackHandler()]
 
 #set the embedding model as per the user selection
 def get_embedding(model):
@@ -26,15 +27,10 @@ def get_embedding(model):
 #set the qa model as per the user selection
 def get_qa_llm(model):
     if model.startswith("Open AI"):
-        #qa using OpenAI
         qa_llm = OpenAI()
     else:
-        #qa using LlamaCppEmbeddings
-        #qa_llm = LlamaCpp(model_path= f"{MODEL_DIRECTORY}/{LLAMA_CPP}")
-        callbacks = [StreamingStdOutCallbackHandler()]
-        path = os.path.join(MODEL_DIRECTORY, GPT4ALL)
-        qa_llm = GPT4ALL(model="models/gpt4all/ggml-gpt4all-j-v1.3-groovy.bin", callbacks=callbacks, verbose=True)
-        #qa_llm = GPT4All("ggml-gpt4all-j-v1.3-groovy")
+        local_path = "./models/gpt4all/ggml-gpt4all-j-v1.3-groovy.bin"
+        qa_llm = GPT4All(model=local_path, n_ctx=512)
     return qa_llm
 
 #llm chain to get the result against the query
@@ -56,32 +52,6 @@ def store_document(file: BytesIO, model: str) -> str:
     vector_store = embed_and_store_text(docs, model)
     print("Vector store created")
     return "File stored"
-
-#store the csv file into vector store
-def store_csv(df, model):
-    #get the name of first column of dataframe
-    first_column = df.columns[0]
-    loader = DataFrameLoader(df, page_content_column=first_column)
-    document_data = loader.load()
-    try:
-        embedding_llm = get_embedding(model)
-    except Exception as e:
-        print(e)
-        return "Error in loading model"
-
-    #store into vector store
-    vector_store = Chroma.from_documents(
-        documents=document_data, 
-        embedding = embedding_llm, 
-        persist_directory=PERSIST_DIRECTORY,
-        collection_name=COLLECTION_NAME
-    )
-    print("Vector store created")
-
-    #load the model
-    qa_llm = get_qa_llm(model)
-    qa = RetrievalQA.from_llm(llm=qa_llm, chain_type="stuff", vectorstore=vector_store)
-    return qa
 
 def load_qa(model)-> RetrievalQA:
     #load the model
