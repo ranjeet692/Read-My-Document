@@ -9,6 +9,7 @@ from langchain.embeddings import OpenAIEmbeddings, HuggingFaceEmbeddings
 from langchain.vectorstores import Chroma, VectorStore
 from openai.error import AuthenticationError, OpenAIError
 from constant import COLLECTION_NAME, PERSIST_DIRECTORY
+import streamlit as st
 
 # Parse a pdf file and extract the text from it
 def parse_pdf(file: BytesIO) -> List[str]:
@@ -37,6 +38,7 @@ def parse_txt(file: BytesIO) -> List[Document]:
     return file.read().decode("utf-8")
 
 # convert text to document
+@st.cache_data()
 def text_to_document(text: str | List[str]) -> List[Document]:
     """Converts text or list of text into document chunks"""
     if isinstance(text, str):

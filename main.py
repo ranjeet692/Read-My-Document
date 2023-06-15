@@ -32,7 +32,7 @@ if "OPENAI_API_KEY" in os.environ:
 key = None
 # sidebar
 with st.sidebar:
-    st.title("LangChain with OpenAI/LlamaCpp")
+    st.title("LangChain with OpenAI/GPT4All")
     model = st.radio("Select Model", ("Local LLM", "Open AI"), index=1)
     if model.startswith("Open AI"):
         key = st.text_input(
@@ -55,7 +55,7 @@ print("model = ", model)
 if model.startswith("Open AI") and (st.session_state["OPENAI_API_KEY"] is None or st.session_state["OPENAI_API_KEY"] == ""):
     raise AuthenticationError("Please enter API key and restart the app")
 else:
-    with st.spinner("Loading documents..."):
+    with st.spinner("Loading model & vector store..."):
         qa = load_qa(model)
     if (qa is None):
         st.write("No documents found. Please upload a document.")
@@ -85,10 +85,11 @@ if qa is not None:
     submit = st.button("Submit")
     if submit:
         response = get_result(qa, query)
-        st.markdown((response), unsafe_allow_html=True)
-        
+        #st.markdown((response), unsafe_allow_html=True)
         st.session_state.past.append(query)
-        st.session_state.generated.append(response)
+        st.session_state.generated.append(response["result"])
+        with st.expander("Show raw response", expanded=False):
+            st.json(response)
 
 if st.session_state["generated"]:
     for i in range(len(st.session_state["generated"]) - 1, -1, -1):

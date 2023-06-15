@@ -1,14 +1,7 @@
 from chromadb.config import Settings
 
-# Define the folder for storing the model
-MODEL_DIRECTORY = "./models"
-
-# model names
-GPT4ALLMODEL = "gpt4all/ggml-gpt4all-j-v1.3-groovy.bin"
-LLAMA_CPP = "llama_cpp/ggml-model-q4_0.bin"
-
 # Define the folder for storing database
-PERSIST_DIRECTORY = "./db"
+PERSIST_DIRECTORY = "./test"
 
 # Define ChromaDB configuration
 CHROMA_SETTINGS = Settings(
@@ -16,7 +9,7 @@ CHROMA_SETTINGS = Settings(
     anonymized_telemetry=False
 )
 
-COLLECTION_NAME = "personal_doc_store"
+COLLECTION_NAME = "test_collection"
 
 # Supported File List
 SUPPORTED_FILE_LIST = ["csv", "pdf", "docx", "txt"]
